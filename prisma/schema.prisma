@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  profile      CreatorProfile?
+  providers    Provider[]
+  contents     Content[]
+  ideas        Idea[]
+  researches   Research[]
+  styleExamples StyleExample[]
+}
+
+model CreatorProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  defaultTone  String?
+  platforms    String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Provider {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  protocol  ProviderProtocol
+  baseUrl   String?
+  apiKey    String
+  model     String?
+  isActive  Boolean  @default(true)
+  isDefault Boolean  @default(false)
+  status    ProviderStatus @default(unknown)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId, isDefault])
+}
+
+enum ProviderProtocol {
+  OPENAI_COMPATIBLE
+  ANTHROPIC_COMPATIBLE
+  GOOGLE_COMPATIBLE
+}
+
+enum ProviderStatus {
+  connected
+  auth_failed
+  endpoint_unavailable
+  rate_limited
+  unknown
+}
+
+model Content {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  title     String
+  content   String    @db.Text
+  format    Format
+  platform  Platform?
+  status    ContentStatus @default(draft)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId, createdAt])
+}
+
+enum Format {
+  x_post
+  x_thread
+  social_post
+  linkedin_post
+  caption
+  tiktok_script
+  youtube_script
+  newsletter
+  email
+  discord
+  blog_post
+}
+
+enum Platform {
+  x
+  linkedin
+  instagram
+  tiktok
+  youtube
+  discord
+}
+
+enum ContentStatus {
+  draft
+  saved
+  published
+}
+
+model Idea {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  topic        String
+  audience     String?
+  hook         String?
+  angle        String?
+  whyWorks     String?
+  suggestedFormat Format?
+  isSaved      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([userId, createdAt])
+}
+
+model Research {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  topic         String
+  depth         ResearchDepth @default(medium)
+  overview      String?  @db.Text
+  keyFacts      String?  @db.Text
+  developments  String?  @db.Text
+  perspectives  String?  @db.Text
+  importantData String?  @db.Text
+  sources       String?  @db.Text
+  contentAngles String?  @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([userId, createdAt])
+}
+
+enum ResearchDepth {
+  shallow
+  medium
+  deep
+}
+
+model StyleExample {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  content   String   @db.Text
+  label     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+}
